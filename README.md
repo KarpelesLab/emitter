@@ -1,0 +1,3 @@
+# emitter
+
+Simple emitter lib.
