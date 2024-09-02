@@ -3,6 +3,7 @@ package emitter
 import (
 	"context"
 	"sync"
+	"time"
 )
 
 type Hub struct {
@@ -81,4 +82,15 @@ func (h *Hub) Emit(ctx context.Context, topic string, args ...any) error {
 	}
 
 	return t.emit(ctx, ev)
+}
+
+// EmitTimeout emits an event with a given timeout instead of using a context. This is useful
+// when emitting events in goroutines, ie:
+//
+//	go h.EmitTimeout(30*time.Second, "topic", args...)
+func (h *Hub) EmitTimeout(timeout time.Duration, topic string, args ...any) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	return h.Emit(ctx, topic, args...)
 }
