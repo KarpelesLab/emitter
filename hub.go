@@ -52,7 +52,8 @@ func (h *Hub) OnWithCap(topic string, c uint) <-chan *Event {
 	return h.getTopic(topic, true).newListener(c)
 }
 
-// Off unsubscribes from a given topic
+// Off unsubscribes from a given topic. If ch is nil, the whole topic is closed, otherwise only the given
+// channel is removed from the topic. Note that the channel will be closed in the process.
 func (h *Hub) Off(topic string, ch <-chan *Event) {
 	t := h.getTopic(topic, false)
 	if t == nil {
