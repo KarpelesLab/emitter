@@ -69,6 +69,22 @@ func (h *Hub) Off(topic string, ch <-chan *Event) {
 	}
 }
 
+// Close will turn off all of the hub's topics, ending all listeners.
+func (h *Hub) Close() error {
+	h.topicsLk.Lock()
+	topics := h.topics
+	h.topics = nil
+	h.topicsLk.Unlock()
+
+	if topics == nil {
+		return nil
+	}
+	for _, t := range topics {
+		t.close()
+	}
+	return nil
+}
+
 // Emit emits an event on the given topic, and will not return until the event has been
 // added to all the queues, or the context expires.
 func (h *Hub) Emit(ctx context.Context, topic string, args ...any) error {
@@ -95,4 +111,24 @@ func (h *Hub) EmitTimeout(timeout time.Duration, topic string, args ...any) erro
 	defer cancel()
 
 	return h.Emit(ctx, topic, args...)
+}
+
+// EmitEvent emits an existing [Event] object without copying it.
+func (h *Hub) EmitEvent(ctx context.Context, topic string, ev *Event) error {
+	ev.Topic = topic
+
+	t := h.getTopic(topic, false)
+	if t == nil {
+		return ErrNoSuchTopic
+	}
+
+	return t.emit(ctx, ev)
+}
+
+// EmitEventTimeout is similar to EmitEvent but with a timeout instead of a context
+func (h *Hub) EmitEventTimeout(timeout time.Duration, topic string, ev *Event) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	return h.EmitEvent(ctx, topic, ev)
 }
