@@ -1,10 +1,15 @@
 package emitter
 
-import "github.com/KarpelesLab/typutil"
+import (
+	"context"
+
+	"github.com/KarpelesLab/typutil"
+)
 
 type Event struct {
-	Topic string
-	Args  []any
+	Context context.Context
+	Topic   string
+	Args    []any
 }
 
 func (ev *Event) Arg(n uint) any {

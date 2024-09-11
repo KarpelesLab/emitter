@@ -78,8 +78,9 @@ func (h *Hub) Emit(ctx context.Context, topic string, args ...any) error {
 	}
 
 	ev := &Event{
-		Topic: topic,
-		Args:  args,
+		Context: ctx,
+		Topic:   topic,
+		Args:    args,
 	}
 
 	return t.emit(ctx, ev)
