@@ -19,3 +19,30 @@ go func(ch <-chan *emitter.Event) {
 
 h.Emit("event", 42)
 ```
+
+# Trigger
+
+The trigger object allows waking multiple threads at the same time using channels rather than [sync.Cond](https://pkg.go.dev/sync#Cond). This can be useful to wake many threads to specific events while still using other event sources such as timers.
+
+## Example
+
+```go
+trig := emitter.NewTrigger()
+
+go func() {
+    t := time.NewTicker(30*time.Second)
+    l := trig.Listen()
+    defer l.Release()
+
+    for {
+        select {
+        case <-t.C:
+            // do something every 30 secs
+        case <-l.C:
+            // do something on trigger called
+        }
+    }
+}
+
+trig.Push() // push event
+```
