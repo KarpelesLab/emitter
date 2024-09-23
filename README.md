@@ -31,6 +31,7 @@ trig := emitter.NewTrigger()
 
 go func() {
     t := time.NewTicker(30*time.Second)
+    defer t.Stop()
     l := trig.Listen()
     defer l.Release()
 
