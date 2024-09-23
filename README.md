@@ -39,7 +39,12 @@ go func() {
         select {
         case <-t.C:
             // do something every 30 secs
-        case <-l.C:
+        case _, closed := <-l.C:
+            if closed {
+                // exit loop if channel is closed, would be triggered by trig.Close()
+                // this can be ignored if trig.Closed() isn't called
+                return
+            }
             // do something on trigger called
         }
     }

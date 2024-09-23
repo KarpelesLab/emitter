@@ -37,7 +37,8 @@ type TriggerListener struct {
 // NewTrigger returns a new trigger object ready for use. This will also create a goroutine
 func NewTrigger() *Trigger {
 	tr := &Trigger{
-		ch: make(map[<-chan struct{}]chan struct{}),
+		Cap: 1, // 1 by default so we can queue even just 1 pending call
+		ch:  make(map[<-chan struct{}]chan struct{}),
 	}
 	tr.c = sync.NewCond(tr.l.RLocker())
 	go tr.thread()
