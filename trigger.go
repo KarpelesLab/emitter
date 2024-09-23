@@ -2,6 +2,7 @@ package emitter
 
 import (
 	"reflect"
+	"runtime"
 	"sync"
 	"sync/atomic"
 )
@@ -65,10 +66,16 @@ func (t *Trigger) Listen() *TriggerListener {
 		t: t,
 	}
 
+	runtime.SetFinalizer(res, releaseTriggerListener)
+
 	t.chLk.Lock()
 	defer t.chLk.Unlock()
 	t.ch[c] = c
 	return res
+}
+
+func releaseTriggerListener(o *TriggerListener) {
+	o.Release()
 }
 
 // Release will close the channel linked to this trigger and stop sending it messages
