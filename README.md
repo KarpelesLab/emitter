@@ -24,6 +24,8 @@ h.Emit("event", 42)
 
 The trigger object allows waking multiple threads at the same time using channels rather than [sync.Cond](https://pkg.go.dev/sync#Cond). This can be useful to wake many threads to specific events while still using other event sources such as timers.
 
+Triggers by default have a queue size of 1, meaning that a call to Push() can be queued and delivered later if the receiving thread is busy. Cap can be set to other values including zero (do not queue) or larger values (queue a number of calls).
+
 ## Example
 
 ```go
