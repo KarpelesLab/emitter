@@ -10,6 +10,8 @@ Simple emitter lib.
 h := emitter.New()
 
 go func(ch <-chan *emitter.Event) {
+    defer h.Off("event", ch)
+
     for ev := range ch {
         // handle event
         intVal, err := emitter.Arg[int](ev, 0)
