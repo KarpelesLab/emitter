@@ -45,7 +45,7 @@ Unlike events `Emit()`, a trigger's `Push()` method returns instantly and is non
 ## Example
 
 ```go
-trig := emitter.NewTrigger()
+trig := emitter.Global.Trigger("test")
 
 go func() {
     t := time.NewTicker(30*time.Second)

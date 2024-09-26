@@ -35,6 +35,8 @@ type TriggerListener struct {
 }
 
 // NewTrigger returns a new trigger object ready for use. This will also create a goroutine
+//
+// Deprecated: instead use Hub.Trigger to have a named trigger.
 func NewTrigger() *Trigger {
 	tr := &Trigger{
 		Cap: 1, // 1 by default so we can queue even just 1 pending call
