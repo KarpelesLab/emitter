@@ -40,6 +40,8 @@ The trigger object allows waking multiple threads at the same time using channel
 
 Triggers by default have a queue size of 1, meaning that a call to Push() can be queued and delivered later if the receiving thread is busy. Cap can be set to other values including zero (do not queue) or larger values (queue a number of calls).
 
+Unlike events `Emit()`, a trigger's `Push()` method returns instantly and is non blocking, with minimal resource usage.
+
 ## Example
 
 ```go

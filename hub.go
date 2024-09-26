@@ -82,9 +82,10 @@ func (h *Hub) OnWithCap(topic string, c uint) <-chan *Event {
 	return h.getTopic(topic, true).newListener(c)
 }
 
-// Listen listens on a given trigger name
-func (h *Hub) Listen(trigName string) *TriggerListener {
-	return h.getTrigger(trigName, true).Listen()
+// Trigger returns the given trigger, creating it if needed. This can make it easy to call methods like Listen()
+// or Push() in one go.
+func (h *Hub) Trigger(trigName string) *Trigger {
+	return h.getTrigger(trigName, true)
 }
 
 // Off unsubscribes from a given topic. If ch is nil, the whole topic is closed, otherwise only the given
@@ -150,14 +151,6 @@ func (h *Hub) EmitTimeout(timeout time.Duration, topic string, args ...any) erro
 	defer cancel()
 
 	return h.Emit(ctx, topic, args...)
-}
-
-// Push sends an event on the given trigger
-func (h *Hub) Push(trigName string) {
-	t := h.getTrigger(trigName, false)
-	if t != nil {
-		t.Push()
-	}
 }
 
 // EmitEvent emits an existing [Event] object without copying it.
