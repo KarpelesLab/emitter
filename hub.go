@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var Global = &Hub{}
+
 type Hub struct {
 	Cap      uint
 	topics   map[string]*topic
