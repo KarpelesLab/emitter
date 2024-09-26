@@ -12,7 +12,7 @@ type Hub struct {
 	Cap      uint
 	topics   map[string]*topic
 	topicsLk sync.RWMutex
-	trig     map[string]*Trigger
+	trig     map[string]Trigger
 	trigLk   sync.RWMutex
 }
 
@@ -46,9 +46,9 @@ func (h *Hub) getTopic(topicName string, create bool) *topic {
 	return t
 }
 
-func (h *Hub) getTrigger(trigName string, create bool) *Trigger {
+func (h *Hub) getTrigger(trigName string, create bool) Trigger {
 	h.trigLk.RLock()
-	var t *Trigger
+	var t Trigger
 	var ok bool
 	if h.trig != nil {
 		t, ok = h.trig[trigName]
@@ -64,7 +64,7 @@ func (h *Hub) getTrigger(trigName string, create bool) *Trigger {
 	defer h.trigLk.Unlock()
 
 	if h.trig == nil {
-		h.trig = make(map[string]*Trigger)
+		h.trig = make(map[string]Trigger)
 	}
 
 	t = NewTrigger()
@@ -84,7 +84,7 @@ func (h *Hub) OnWithCap(topic string, c uint) <-chan *Event {
 
 // Trigger returns the given trigger, creating it if needed. This can make it easy to call methods like Listen()
 // or Push() in one go.
-func (h *Hub) Trigger(trigName string) *Trigger {
+func (h *Hub) Trigger(trigName string) Trigger {
 	return h.getTrigger(trigName, true)
 }
 
