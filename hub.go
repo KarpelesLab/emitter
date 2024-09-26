@@ -12,6 +12,8 @@ type Hub struct {
 	Cap      uint
 	topics   map[string]*topic
 	topicsLk sync.RWMutex
+	trig     map[string]*Trigger
+	trigLk   sync.RWMutex
 }
 
 func New() *Hub {
@@ -44,6 +46,32 @@ func (h *Hub) getTopic(topicName string, create bool) *topic {
 	return t
 }
 
+func (h *Hub) getTrigger(trigName string, create bool) *Trigger {
+	h.trigLk.RLock()
+	var t *Trigger
+	var ok bool
+	if h.trig != nil {
+		t, ok = h.trig[trigName]
+	}
+	h.trigLk.RUnlock()
+	if ok {
+		return t
+	} else if !create {
+		return nil
+	}
+
+	h.trigLk.Lock()
+	defer h.trigLk.Unlock()
+
+	if h.trig == nil {
+		h.trig = make(map[string]*Trigger)
+	}
+
+	t = NewTrigger()
+	h.trig[trigName] = t
+	return t
+}
+
 // On returns a channel that will receive events
 func (h *Hub) On(topic string) <-chan *Event {
 	return h.getTopic(topic, true).newListener(h.Cap)
@@ -52,6 +80,11 @@ func (h *Hub) On(topic string) <-chan *Event {
 // OnWithCap returns a channel that will receive events, and has the given capacity instead of the default one
 func (h *Hub) OnWithCap(topic string, c uint) <-chan *Event {
 	return h.getTopic(topic, true).newListener(c)
+}
+
+// Listen listens on a given trigger name
+func (h *Hub) Listen(trigName string) *TriggerListener {
+	return h.getTrigger(trigName, true).Listen()
 }
 
 // Off unsubscribes from a given topic. If ch is nil, the whole topic is closed, otherwise only the given
@@ -77,12 +110,16 @@ func (h *Hub) Close() error {
 	topics := h.topics
 	h.topics = nil
 	h.topicsLk.Unlock()
+	h.trigLk.Lock()
+	trig := h.trig
+	h.trig = nil
+	h.trigLk.Unlock()
 
-	if topics == nil {
-		return nil
-	}
 	for _, t := range topics {
 		t.close()
+	}
+	for _, t := range trig {
+		t.Close()
 	}
 	return nil
 }
@@ -113,6 +150,14 @@ func (h *Hub) EmitTimeout(timeout time.Duration, topic string, args ...any) erro
 	defer cancel()
 
 	return h.Emit(ctx, topic, args...)
+}
+
+// Push sends an event on the given trigger
+func (h *Hub) Push(trigName string) {
+	t := h.getTrigger(trigName, false)
+	if t != nil {
+		t.Push()
+	}
 }
 
 // EmitEvent emits an existing [Event] object without copying it.
