@@ -82,6 +82,13 @@ func (h *Hub) OnWithCap(topic string, c uint) <-chan *Event {
 	return h.getTopic(topic, true).newListener(c)
 }
 
+func (h *Hub) Push(trigger string) {
+	t := h.getTrigger(trigger, false)
+	if t != nil {
+		t.Push()
+	}
+}
+
 // Trigger returns the given trigger, creating it if needed. This can make it easy to call methods like Listen()
 // or Push() in one go.
 func (h *Hub) Trigger(trigName string) Trigger {
