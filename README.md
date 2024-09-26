@@ -20,6 +20,20 @@ go func(ch <-chan *emitter.Event) {
 h.Emit("event", 42)
 ```
 
+## Global Hub
+
+For some cases it might be useful to have global events that can be handled by multiple packages. This can be done with the global hub.
+
+```go
+go func(ch <-chan *emitter.Event) {
+    for ev := range ch {
+        // ...
+    }
+})(emitter.Global.On("event"))
+
+emitter.Global.Emit("event", 42)
+```
+
 # Trigger
 
 The trigger object allows waking multiple threads at the same time using channels rather than [sync.Cond](https://pkg.go.dev/sync#Cond). This can be useful to wake many threads to specific events while still using other event sources such as timers.
