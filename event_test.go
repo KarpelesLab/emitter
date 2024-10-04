@@ -1,6 +1,7 @@
 package emitter_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/KarpelesLab/emitter"
@@ -23,5 +24,13 @@ func TestEventArg(t *testing.T) {
 	}
 	if strV != "hello" {
 		t.Errorf("unexpected value %v", strV)
+	}
+
+	strJ, err := ev.EncodedArg(1, "json", json.Marshal)
+	if err != nil {
+		t.Errorf("failed json encode: %s", err)
+	}
+	if string(strJ) != `"hello"` {
+		t.Errorf("invalid json: %s", strJ)
 	}
 }
