@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 	"sync"
 )
 
@@ -44,26 +45,14 @@ func (t *topic) takeAll() []*listener {
 	return res
 }
 
-func (t *topic) makeCases(ctx context.Context, val reflect.Value) []reflect.SelectCase {
+func (t *topic) getListeners() []*listener {
 	t.listenersLk.RLock()
 	defer t.listenersLk.RUnlock()
 
-	res := make([]reflect.SelectCase, len(t.listeners)+1)
-	res[0].Dir = reflect.SelectRecv
-
-	if ch := ctx.Done(); ch != nil {
-		res[0].Chan = reflect.ValueOf(ch)
-	}
-
-	n := 1
-
+	res := make([]*listener, 0, len(t.listeners))
 	for _, l := range t.listeners {
-		res[n].Dir = reflect.SelectSend
-		res[n].Chan = reflect.ValueOf(l.ch)
-		res[n].Send = val
-		n += 1
+		res = append(res, l)
 	}
-
 	return res
 }
 
@@ -75,7 +64,36 @@ func (t *topic) emit(ctx context.Context, ev *Event) (err error) {
 		}
 	}()
 
-	cases := t.makeCases(ctx, reflect.ValueOf(ev))
+	list := t.getListeners()
+	if len(list) == 0 {
+		return nil
+	}
+	for n, l := range list {
+		l.lk.Lock()
+		defer l.lk.Unlock() // going to be a lot of defer funcs
+
+		if l.ch == nil {
+			list[n] = nil
+		}
+	}
+	slices.DeleteFunc(list, func(l *listener) bool { return l == nil })
+
+	cases := make([]reflect.SelectCase, len(list)+1)
+	cases[0].Dir = reflect.SelectRecv
+
+	if ch := ctx.Done(); ch != nil {
+		cases[0].Chan = reflect.ValueOf(ch)
+	}
+
+	n := 1
+
+	for _, l := range list {
+		cases[n].Dir = reflect.SelectSend
+		cases[n].Chan = reflect.ValueOf(l.ch)
+		cases[n].Send = reflect.ValueOf(ev)
+		n += 1
+	}
+
 	cnt := len(cases) - 1 // number of sends we expect, considering cases[0] is reserved for context timeout
 
 	for {
@@ -98,7 +116,7 @@ func (t *topic) emit(ctx context.Context, ev *Event) (err error) {
 func (t *topic) close() {
 	ls := t.takeAll()
 	for _, l := range ls {
-		close(l.ch)
+		go l.close()
 	}
 }
 
@@ -108,6 +126,6 @@ func (t *topic) remove(ch <-chan *Event) {
 
 	if l, ok := t.listeners[ch]; ok {
 		delete(t.listeners, ch)
-		close(l.ch)
+		go l.close()
 	}
 }
