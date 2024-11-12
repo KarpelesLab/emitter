@@ -64,8 +64,7 @@ func (t *triggerImpl) Close() error {
 	return nil
 }
 
-// Listen returns a listener object. Remember to release the object after you stop using it
-// (calling release will close the channel).
+// Listen returns a listener object. Remember to release the object after you stop using it.
 func (t *triggerImpl) Listen() *TriggerListener {
 	c := make(chan struct{}, t.Cap)
 	res := &TriggerListener{
@@ -85,26 +84,19 @@ func releaseTriggerListener(o *TriggerListener) {
 	o.Release()
 }
 
-// Release will close the channel linked to this trigger and stop sending it messages
+// Release will stop sending data to the channel for this trigger. The channel will not be
+// closed howeveras Release() is assumed to be called when exiting the listening loop.
 func (tl *TriggerListener) Release() {
 	t := tl.t
 	t.chLk.Lock()
 	defer t.chLk.Unlock()
-	if c, ok := t.ch[tl.C]; ok {
-		delete(t.ch, tl.C)
-		close(c)
-	}
+	delete(t.ch, tl.C)
 }
 
 var emptyStructVal = reflect.ValueOf(struct{}{})
 
 // emit pushes a struct{}{} on all known channels
 func (t *triggerImpl) emit() {
-	defer func() {
-		// avoid panic
-		recover()
-	}()
-
 	t.chLk.RLock()
 	defer t.chLk.RUnlock()
 
