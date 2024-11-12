@@ -2,6 +2,7 @@ package emitter
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 )
@@ -66,7 +67,14 @@ func (t *topic) makeCases(ctx context.Context, val reflect.Value) []reflect.Sele
 	return res
 }
 
-func (t *topic) emit(ctx context.Context, ev *Event) error {
+func (t *topic) emit(ctx context.Context, ev *Event) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			// most likely: panic: send on closed channel. Give up as we can't know exactly which channel caused this
+			err = fmt.Errorf("panic in emit: %s", e)
+		}
+	}()
+
 	cases := t.makeCases(ctx, reflect.ValueOf(ev))
 	cnt := len(cases) - 1 // number of sends we expect, considering cases[0] is reserved for context timeout
 
