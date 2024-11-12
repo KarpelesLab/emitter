@@ -10,7 +10,7 @@ import (
 // Trigger is a simple lightweight process for sending simple one shot notifications on
 // multiple channels. There is no event or notification content, just a "wake up" signal
 // sent to many channels at the same time. Calling the trigger costs virtually nothing
-// while listeners can have more complex logic.
+// (just one atomic integer operation) while listeners can have more complex logic.
 //
 // Even if there are a lot of listeners and it takes time to deliver notifications, each
 // call to Push will translate to one attempt to push something on the listening channels.
@@ -19,6 +19,7 @@ import (
 // larger than zero.
 type Trigger interface {
 	Listen() *TriggerListener
+	ListenCap(c uint) *TriggerListener
 	Push()
 	Close() error
 }
@@ -66,7 +67,11 @@ func (t *triggerImpl) Close() error {
 
 // Listen returns a listener object. Remember to release the object after you stop using it.
 func (t *triggerImpl) Listen() *TriggerListener {
-	c := make(chan struct{}, t.Cap)
+	return t.ListenCap(t.Cap)
+}
+
+func (t *triggerImpl) ListenCap(capa uint) *TriggerListener {
+	c := make(chan struct{}, capa)
 	res := &TriggerListener{
 		C: c,
 		t: t,
