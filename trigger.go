@@ -156,6 +156,7 @@ func (t *triggerImpl) thread() {
 			t.chLk.Lock()
 			defer t.chLk.Unlock()
 			for _, c := range t.ch {
+				// close any still not released channel so they know this is the end
 				close(c)
 			}
 			clear(t.ch)
