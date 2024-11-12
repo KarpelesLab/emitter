@@ -98,38 +98,33 @@ func (tl *TriggerListener) Release() {
 
 var emptyStructVal = reflect.ValueOf(struct{}{})
 
-// makeCases generates an array of [reflect.SelectCase] for use with reflect.Select
-func (t *triggerImpl) makeCases() []reflect.SelectCase {
-	t.chLk.RLock()
-	defer t.chLk.RUnlock()
-
-	if len(t.ch) == 0 {
-		// do nothing
-		return nil
-	}
-
-	res := make([]reflect.SelectCase, len(t.ch)+1)
-	res[0].Dir = reflect.SelectDefault
-
-	n := 1
-
-	for _, l := range t.ch {
-		res[n].Dir = reflect.SelectSend
-		res[n].Chan = reflect.ValueOf(l)
-		res[n].Send = emptyStructVal
-		n += 1
-	}
-
-	return res
-}
-
 // emit pushes a struct{}{} on all known channels
 func (t *triggerImpl) emit() {
 	defer func() {
 		// avoid panic
 		recover()
 	}()
-	cases := t.makeCases()
+
+	t.chLk.RLock()
+	defer t.chLk.RUnlock()
+
+	if len(t.ch) == 0 {
+		// do nothing
+		return
+	}
+
+	cases := make([]reflect.SelectCase, len(t.ch)+1)
+	cases[0].Dir = reflect.SelectDefault
+
+	n := 1
+
+	for _, l := range t.ch {
+		cases[n].Dir = reflect.SelectSend
+		cases[n].Chan = reflect.ValueOf(l)
+		cases[n].Send = emptyStructVal
+		n += 1
+	}
+
 	if len(cases) == 0 {
 		// do nothing
 		return
