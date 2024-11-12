@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"slices"
 	"sync"
 )
 
@@ -45,17 +44,6 @@ func (t *topic) takeAll() []*listener {
 	return res
 }
 
-func (t *topic) getListeners() []*listener {
-	t.listenersLk.RLock()
-	defer t.listenersLk.RUnlock()
-
-	res := make([]*listener, 0, len(t.listeners))
-	for _, l := range t.listeners {
-		res = append(res, l)
-	}
-	return res
-}
-
 func (t *topic) emit(ctx context.Context, ev *Event) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -64,19 +52,18 @@ func (t *topic) emit(ctx context.Context, ev *Event) (err error) {
 		}
 	}()
 
-	list := t.getListeners()
-	if len(list) == 0 {
+	// keep listenersLk locked during send
+	t.listenersLk.RLock()
+	defer t.listenersLk.RUnlock()
+
+	if len(t.listeners) == 0 {
 		return nil
 	}
-	for n, l := range list {
-		l.lk.Lock()
-		defer l.lk.Unlock() // going to be a lot of defer funcs
 
-		if l.ch == nil {
-			list[n] = nil
-		}
+	list := make([]*listener, 0, len(t.listeners))
+	for _, l := range t.listeners {
+		list = append(list, l)
 	}
-	slices.DeleteFunc(list, func(l *listener) bool { return l == nil })
 
 	cases := make([]reflect.SelectCase, len(list)+1)
 	cases[0].Dir = reflect.SelectRecv
