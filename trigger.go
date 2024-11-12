@@ -125,6 +125,10 @@ func (t *triggerImpl) makeCases() []reflect.SelectCase {
 
 // emit pushes a struct{}{} on all known channels
 func (t *triggerImpl) emit() {
+	defer func() {
+		// avoid panic
+		recover()
+	}()
 	cases := t.makeCases()
 	if len(cases) == 0 {
 		// do nothing
