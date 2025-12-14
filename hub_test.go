@@ -13,7 +13,9 @@ func TestEvents(t *testing.T) {
 
 	go handleTest1(h.On("test1"))
 
-	h.Emit(context.Background(), "test1", "hello world")
+	if err := h.Emit(context.Background(), "test1", "hello world"); err != nil {
+		t.Errorf("Emit failed: %v", err)
+	}
 }
 
 func handleTest1(ch <-chan *emitter.Event) {
