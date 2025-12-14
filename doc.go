@@ -13,14 +13,15 @@
 // Basic usage:
 //
 //	h := emitter.New()
+//	ch := h.On("event")
 //
-//	go func(ch <-chan *emitter.Event) {
+//	go func() {
 //	    defer h.Off("event", ch)
 //	    for ev := range ch {
 //	        intVal, err := emitter.Arg[int](ev, 0)
 //	        // process event...
 //	    }
-//	}(h.On("event"))
+//	}()
 //
 //	h.Emit(context.Background(), "event", 42)
 //

@@ -25,8 +25,9 @@ go get github.com/KarpelesLab/emitter
 
 ```go
 h := emitter.New()
+ch := h.On("event")
 
-go func(ch <-chan *emitter.Event) {
+go func() {
     defer h.Off("event", ch)
 
     for ev := range ch {
@@ -34,7 +35,7 @@ go func(ch <-chan *emitter.Event) {
         intVal, err := emitter.Arg[int](ev, 0)
         // intVal is 42
     }
-}(h.On("event"))
+}()
 
 h.Emit(context.Background(), "event", 42)
 ```
@@ -44,11 +45,13 @@ h.Emit(context.Background(), "event", 42)
 For cases where events need to be shared across multiple packages, use the global hub:
 
 ```go
-go func(ch <-chan *emitter.Event) {
+ch := emitter.Global.On("event")
+
+go func() {
     for ev := range ch {
         // ...
     }
-}(emitter.Global.On("event"))
+}()
 
 emitter.Global.Emit(context.Background(), "event", 42)
 ```
