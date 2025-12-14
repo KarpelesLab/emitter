@@ -6,9 +6,20 @@ import (
 	"time"
 )
 
+// Global is the default Hub instance that can be used for application-wide
+// event handling. It is useful when events need to be shared across multiple
+// packages without explicitly passing a Hub reference.
 var Global = &Hub{}
 
+// Hub is the central event dispatcher that manages topics and triggers.
+// It provides methods for subscribing to topics, emitting events, and
+// managing triggers for lightweight notifications.
+//
+// A Hub is safe for concurrent use by multiple goroutines.
 type Hub struct {
+	// Cap is the default channel capacity for new listeners created with [Hub.On].
+	// Set this before creating listeners to change the default buffer size.
+	// The default value of 0 means unbuffered channels.
 	Cap      uint
 	topics   map[string]*topic
 	topicsLk sync.RWMutex
@@ -16,6 +27,7 @@ type Hub struct {
 	trigLk   sync.RWMutex
 }
 
+// New creates and returns a new Hub instance with default settings.
 func New() *Hub {
 	return &Hub{}
 }
@@ -82,6 +94,9 @@ func (h *Hub) OnWithCap(topic string, c uint) <-chan *Event {
 	return h.getTopic(topic, true).newListener(c)
 }
 
+// Push sends a signal to the named trigger, waking all its listeners.
+// If the trigger does not exist, this method does nothing.
+// Unlike [Hub.Emit], Push returns immediately and is non-blocking.
 func (h *Hub) Push(trigger string) {
 	t := h.getTrigger(trigger, false)
 	if t != nil {
